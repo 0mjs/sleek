@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="sleek",
+    name="sleekify",
     version="0.0.1",
     author="Matt J. Stevenson",
     author_email="dev@mattjs.me",

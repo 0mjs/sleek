@@ -6,3 +6,7 @@
 venv
 environment.yml
 .DS_Store
+build
+dist
+__pycache__
+*.egg-info
