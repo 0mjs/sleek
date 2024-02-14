@@ -1,9 +1,11 @@
-from typing import Dict, Callable, Awaitable
+from typing import Dict, Callable, Awaitable, Union
 
 from .http import Request, JSON
+
 from pydantic import BaseModel, ValidationError
 from starlette.types import Scope, Receive, Send
 from inspect import signature
+import inspect
 
 
 class Sleek:
@@ -21,14 +23,25 @@ class Sleek:
         self.routes[path][method.upper()] = handler
 
     def get(self, path: str):
-        def decorator(func: Callable[[Request], Awaitable[JSON]]):
-            self.add_route(path, "GET", func)
+        def decorator(func: Callable[..., Awaitable[Union[JSON, Dict]]]):
+            async def wrapper(request: Request):
+                sig = inspect.signature(func)
+                if "request" in sig.parameters:
+                    result = await func(request)
+                else:
+                    result = await func()
+
+                if isinstance(result, Dict):
+                    return JSON(result)
+                return result
+
+            self.add_route(path, "GET", wrapper)
             return func
 
         return decorator
 
     def post(self, path: str):
-        def decorator(func: Callable[..., Awaitable[JSON]]):
+        def decorator(func: Callable[..., Awaitable[Union[JSON, Dict]]]):
             async def wrapper(request: Request):
                 sig = signature(func)
                 model_cls = None
@@ -44,8 +57,13 @@ class Sleek:
                         response = await func(model_instance)
                     except ValidationError as e:
                         return JSON({"detail": e.errors()}, status_code=422)
-                else:
+                elif "request" in sig.parameters:
                     response = await func(request)
+                else:
+                    response = await func()
+
+                if isinstance(response, Dict):
+                    return JSON(response)
                 return response
 
             self.add_route(path, "POST", wrapper)
@@ -54,15 +72,25 @@ class Sleek:
         return decorator
 
     def put(self, path: str):
-        def decorator(func: Callable[[Request], Awaitable[JSON]]):
-            self.add_route(path, "PUT", func)
-            return func
-
-        return decorator
+        return self._method_decorator(path, "PUT")
 
     def delete(self, path: str):
-        def decorator(func: Callable[[Request], Awaitable[JSON]]):
-            self.add_route(path, "DELETE", func)
+        return self._method_decorator(path, "DELETE")
+
+    def _method_decorator(self, path: str, method: str):
+        def decorator(func: Callable[..., Awaitable[Union[JSON, Dict]]]):
+            async def wrapper(request: Request):
+                sig = signature(func)
+                if "request" in sig.parameters:
+                    result = await func(request)
+                else:
+                    result = await func()
+
+                if isinstance(result, Dict):
+                    return JSON(result)
+                return result
+
+            self.add_route(path, method, wrapper)
             return func
 
         return decorator
@@ -73,10 +101,17 @@ class Sleek:
             path = scope["path"]
             method = scope["method"]
             handler = self.routes.get(path, {}).get(method.upper())
+
             if handler:
                 response = await handler(request)
+                if isinstance(response, Dict):
+                    response = JSON(response)
+                if isinstance(response, JSON):
+                    await response(scope, receive, send)
+                else:
+                    raise TypeError("Handler response must be a JSON or Dict")
             else:
                 response = JSON({"message": "Not Found"}, status_code=404)
-            await response(scope, receive, send)
+                await response(scope, receive, send)
         else:
             raise NotImplementedError(f"Unsupported scope type {scope['type']}")

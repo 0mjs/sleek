@@ -1,1 +1,1 @@
-from .core import Sleek as API, Request, JSON
+from .core import Sleek as App, Request, JSON

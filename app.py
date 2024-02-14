@@ -1,25 +1,23 @@
-from sleek import API, Request, JSON
-
-app = API()
-
-
-@app.get("/")
-async def get_endpoint():
-    return JSON({"message": "Hello, world!"})
-
-
-@app.post("/create")
-async def post_endpoint(request: Request):
-    body = await request.json()
-    return JSON({"message": "Item created", "body": body})
-
-
+from sleek import App, Request, JSON
 from pydantic import BaseModel
+
+
+app = App()
 
 
 class ItemCreate(BaseModel):
     name: str
     duration: int = 3600
+
+
+@app.get("/")
+async def get_endpoint():
+    return {"message": "Hello, world!"}
+
+
+@app.post("/create")
+async def post_endpoint(request: Request):
+    return JSON({"message": "Item created", "body": request})
 
 
 @app.post("/pydantic")
