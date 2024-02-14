@@ -7,6 +7,6 @@ setup(
     author="Matt J. Stevenson",
     author_email="dev@mattjs.me",
     packages=find_packages(),
-    install_requires=["httpx", "uvicorn", "starlette"],
+    install_requires=["httpx", "uvicorn", "starlette", "pydantic"],
     python_requires=">=3.11",
 )

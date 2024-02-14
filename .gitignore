@@ -1,0 +1,8 @@
+.env
+.env.local
+.env.local.development
+.pyc
+.pytest_cache
+venv
+environment.yml
+.DS_Store
