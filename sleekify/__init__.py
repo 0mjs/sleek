@@ -66,7 +66,12 @@ class Sleekify:
 
         if isinstance(response, Dict):
             return JSONResponse(response)
-        return response
+        elif isinstance(response, list):
+            return JSONResponse(response)
+        elif callable(response):
+            return response
+        else:
+            return JSONResponse({"error": "Invalid response type"}, status_code=500)
 
     def route_decorator(self, path: str, method: str):
         def decorator(router: Router):
