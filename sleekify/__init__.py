@@ -3,6 +3,8 @@ import re
 from json.decoder import JSONDecodeError
 from inspect import signature, _empty, isclass
 
+from starlette.datastructures import UploadFile
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import Scope, Receive, Send
@@ -49,37 +51,55 @@ class App:
         sig = signature(router)
         kwargs = {}
 
-        for name, param in sig.parameters.items():
-            if param.annotation is Request:
-                kwargs[name] = request
-                continue
+        if request.method in ["POST", "PUT", "PATCH"]:
+            content_type = request.headers.get("content-type", "")
 
-            if request.method in ["POST", "PUT", "PATCH"]:
+            if "application/json" in content_type:
                 try:
                     json_body = await request.json()
                 except JSONDecodeError:
                     json_body = {}
-
-                if isinstance(param.default, Guard):
-                    resolved_value = await param.default.resolve()
-                    kwargs[name] = resolved_value
-                elif isclass(param.annotation) and issubclass(
-                    param.annotation, BaseModel
-                ):
-                    try:
-                        model = param.annotation.parse_obj(json_body)
-                        kwargs[name] = model
-                    except ValidationError as e:
-                        return JSONResponse({"detail": e.errors()}, status_code=422)
-                else:
-                    value = json_body.get(
-                        name, param.default if param.default is not _empty else None
-                    )
-                    kwargs[name] = value
-            else:
                 for name, param in sig.parameters.items():
-                    if name == "_request":
-                        continue
+                    if isclass(param.annotation) and issubclass(
+                        param.annotation, BaseModel
+                    ):
+                        try:
+                            model = param.annotation.parse_obj(json_body)
+                            kwargs[name] = model
+                        except ValidationError as e:
+                            return JSONResponse({"detail": e.errors()}, status_code=422)
+                    elif name in json_body:
+                        kwargs[name] = json_body[name]
+
+            elif "multipart/form-data" in content_type:
+                form = await request.form()
+                for name, param in sig.parameters.items():
+                    if name in form:
+                        if (
+                            isinstance(form[name], UploadFile)
+                            and param.annotation == UploadFile
+                        ):
+                            kwargs[name] = form[name]
+                        elif not isinstance(form[name], UploadFile):
+                            value = form[name]
+                            expected_type = param.annotation
+                            if expected_type is _empty or expected_type is str:
+                                kwargs[name] = value
+                            else:
+                                try:
+                                    kwargs[name] = expected_type(value)
+                                except ValueError:
+                                    return JSONResponse(
+                                        {"detail": f"Invalid type for field '{name}'"},
+                                        status_code=400,
+                                    )
+                    elif param.default is not _empty:
+                        kwargs[name] = param.default
+
+        else:
+            for name, param in sig.parameters.items():
+                if name in request.query_params:
+                    kwargs[name] = request.query_params[name]
 
         return kwargs
 
