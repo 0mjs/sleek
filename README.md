@@ -6,14 +6,14 @@ In it's absolute infancy, Sleekify already includes some common concepts of a RE
 Installation:
 
 ```
-pip install sleekfiy
+pip install sleekify
 ```
 
 Usage:
 
 ```
 
-from sleekfiy import App
+from sleekify import App
 
 app = App()
 
