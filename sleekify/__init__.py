@@ -62,48 +62,6 @@ class Sleekify:
 
         return kwargs
 
-    async def resolve_parameters(
-        self, request: Request, router: Router
-    ) -> Dict[str, Any]:
-        sig = signature(router)
-        kwargs = {}
-
-        if "request" in sig.parameters:
-            kwargs["request"] = request
-
-        if request.method == "POST":
-            try:
-                json_body = await request.json()
-            except JSONDecodeError:
-                json_body = {}
-
-            for name, param in sig.parameters.items():
-                if name == "request":
-                    continue
-
-                if isinstance(param.default, Guard):
-                    resolved_value = await param.default.resolve()
-                    kwargs[name] = resolved_value
-                elif isclass(param.annotation) and issubclass(
-                    param.annotation, BaseModel
-                ):
-                    try:
-                        model = param.annotation.parse_obj(json_body)
-                        kwargs[name] = model
-                    except ValidationError as e:
-                        return JSONResponse({"detail": e.errors()}, status_code=422)
-                else:
-                    value = json_body.get(
-                        name, param.default if param.default is not _empty else None
-                    )
-                    kwargs[name] = value
-        else:
-            for name, param in sig.parameters.items():
-                if name == "request":
-                    continue
-
-        return kwargs
-
     async def common_handler(self, request: Request, router: Router):
         kwargs = await self.resolve_parameters(request, router)
         response = await router(**kwargs)
