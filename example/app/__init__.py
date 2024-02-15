@@ -5,6 +5,11 @@ from typing import Optional
 app = Sleekify()
 
 
+class ItemModel(BaseModel):
+    name: str
+    price: Optional[int] = None
+
+
 async def Authenticate(with_token: bool = False):
     if with_token:
         return {"user": "Matt", "token": "123456"}
@@ -12,18 +17,13 @@ async def Authenticate(with_token: bool = False):
 
 
 @app.post("/secure")
-async def secure(auth=Guard(Authenticate, with_token=True)):
-    return {"message": "success", "auth": auth}
+async def secure(auth=Guard(Authenticate, with_token=False)):
+    return {"role": "authenticated", "session": auth}
 
 
 @app.get("/get-item")
 async def get():
     return {"data": "item-1"}
-
-
-class ItemModel(BaseModel):
-    name: str
-    price: Optional[int] = None
 
 
 @app.post("/create-item")
