@@ -1,8 +1,6 @@
-from json.decoder import JSONDecodeError
 from typing import Optional
 
-from core import Sleekify
-from starlette.exceptions import HTTPException
+from sleekify import Sleekify, Guard
 from pydantic import BaseModel
 
 app = Sleekify()
@@ -14,26 +12,53 @@ class HelloModel(BaseModel):
     dob: Optional[str]
 
 
+# GET
+
+
+class AuthModel(BaseModel):
+    user: str
+    token: str | None
+
+
+async def Authenticate(with_token: bool = True) -> AuthModel:
+    if with_token:
+        return AuthModel(user="Matt", token="sleekify-token-250396")
+    return AuthModel(user="Matt", token=None)
+
+
+@app.post("/secure")
+async def secure_endpoint(auth=Guard(Authenticate, with_token=True)):
+    user, token = auth.user, auth.token
+    return {
+        "message": f"Hello, {user}! Your token is '{token}'",
+    }
+
+
 @app.get("/hello")
 async def hello():
-    return {"message": "Hello, world!"}
+    return {
+        "message": "Hello, world!",
+        "framework": "sleekify",
+        "version": "0.0.2",
+    }
+
+
+# POST
 
 
 @app.post("/hello-pydantic-model")
 async def hello(data: HelloModel):
-    try:
-        return {
-            "message": f"Hello, {data.name}! You are {data.age} years old and were born on {data.dob}"
-        }
-    except JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+    return {
+        "message": f"Hello, {data.name}! You are {data.age} years old and were born on {data.dob}",
+        "framework": "sleekify",
+        "version": "0.0.2",
+    }
 
 
 @app.post("/hello-basic-args")
 async def hello(name: str, age: Optional[int] = None, dob: Optional[str] = None):
-    try:
-        return {
-            "message": f"Hello, {name}! You are {age} years old and were born on {dob}"
-        }
-    except JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+    return {
+        "message": f"Hello, {name}! You are {age} years old and were born on {dob}",
+        "framework": "sleekify",
+        "version": "0.0.2",
+    }

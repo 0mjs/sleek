@@ -1,32 +1,48 @@
 from json.decoder import JSONDecodeError
 from inspect import signature, _empty, isclass
-from typing import Dict, Callable, Awaitable, Optional, Union, get_type_hints
+from typing import Any, Dict, Callable, Awaitable, Optional, Union, get_type_hints
+import asyncio
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import Scope, Receive, Send
 from pydantic import BaseModel, ValidationError
 
+RouteHandler = Callable[[Request], Awaitable[JSONResponse]]
+RouterHandlerFunc = Callable[..., Awaitable[Union[JSONResponse, Dict]]]
+Routes = Dict[str, Dict[str, RouteHandler]]
+
+
+class Guard:
+    def __init__(self, func: Callable[..., Awaitable[Any]], *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    async def resolve(self):
+        if asyncio.iscoroutinefunction(self.func):
+            return await self.func(*self.args, **self.kwargs)
+        else:
+            return self.func(*self.args, **self.kwargs)
+
 
 class Sleekify:
     def __init__(self):
-        self.routes: Dict[
-            str, Dict[str, Callable[[Request], Awaitable[JSONResponse]]]
-        ] = {}
+        self.routes: Routes = {}
 
     def router(
         self,
         path: str,
         method: str,
-        handler: Callable[[Request], Awaitable[JSONResponse]],
+        handler: RouteHandler,
     ):
         if path not in self.routes:
             self.routes[path] = {}
         self.routes[path][method.upper()] = handler
 
     def get(self, path: str):
-        def decorator(func: Callable[..., Awaitable[Union[JSONResponse, Dict]]]):
-            async def wrapper(request: Request):
+        def decorator(func: RouterHandlerFunc):
+            async def handler(request: Request):
                 sig = signature(func)
                 if "request" in sig.parameters:
                     result = await func(request)
@@ -37,38 +53,39 @@ class Sleekify:
                     return JSONResponse(result)
                 return result
 
-            self.router(path, "GET", wrapper)
+            self.router(path, "GET", handler)
             return func
 
         return decorator
 
     def post(self, path: str):
-        def decorator(func: Callable[..., Awaitable[Union[JSONResponse, Dict]]]):
-            async def wrapper(request: Request):
+        def decorator(func: RouterHandlerFunc):
+            async def handler(request: Request):
                 try:
                     json_body = await request.json()
                 except JSONDecodeError:
-                    return JSONResponse({"detail": "Invalid JSON."}, status_code=400)
+                    json_body = {}
 
                 sig = signature(func)
-                type_hints = get_type_hints(func)
                 kwargs = {}
 
                 for name, param in sig.parameters.items():
-                    param_type = type_hints.get(name)
-                    if isclass(param_type) and issubclass(param_type, BaseModel):
+                    if isinstance(param.default, Guard):
+                        resolved_value = await param.default.resolve()
+                        kwargs[name] = resolved_value
+                    elif isclass(param.annotation) and issubclass(
+                        param.annotation, BaseModel
+                    ):
                         try:
-                            model = param_type(**json_body)
+                            model = param.annotation(**json_body)
                             kwargs[name] = model
                         except ValidationError as e:
                             return JSONResponse({"detail": e.errors()}, status_code=422)
                     else:
-                        if name in json_body:
-                            kwargs[name] = json_body[name]
-                        elif param.default is not _empty:
-                            kwargs[name] = param.default
-                        elif param.annotation in [Optional, Union]:
-                            kwargs[name] = None
+                        value = json_body.get(
+                            name, param.default if param.default is not _empty else None
+                        )
+                        kwargs[name] = value
 
                 response = await func(**kwargs)
 
@@ -76,7 +93,7 @@ class Sleekify:
                     return JSONResponse(response)
                 return response
 
-            self.router(path, "POST", wrapper)
+            self.router(path, "POST", handler)
             return func
 
         return decorator
@@ -96,7 +113,9 @@ class Sleekify:
                     if isinstance(response, JSONResponse):
                         await response(scope, receive, send)
                     else:
-                        raise TypeError("Handler response must be JSONResponse or Dict")
+                        raise TypeError(
+                            "Response should be a dictionary or JSONResponse, dictionaries are inferred to JSONResponse."
+                        )
                 else:
                     response = JSONResponse({"message": "Not Found"}, status_code=404)
                     await response(scope, receive, send)
