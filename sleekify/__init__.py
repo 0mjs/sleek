@@ -26,6 +26,9 @@ class Sleekify:
         sig = signature(router)
         kwargs = {}
 
+        if "request" in sig.parameters:
+            kwargs["request"] = request
+
         if request.method == "POST":
             try:
                 json_body = await request.json()
@@ -33,6 +36,9 @@ class Sleekify:
                 json_body = {}
 
             for name, param in sig.parameters.items():
+                if name == "request":
+                    continue
+
                 if isinstance(param.default, Guard):
                     resolved_value = await param.default.resolve()
                     kwargs[name] = resolved_value
@@ -51,10 +57,8 @@ class Sleekify:
                     kwargs[name] = value
         else:
             for name, param in sig.parameters.items():
-                if "request" in sig.parameters:
-                    kwargs[name] = await router(request)
-                else:
-                    kwargs[name] = await router()
+                if name == "request":
+                    continue
 
         return kwargs
 
@@ -81,6 +85,15 @@ class Sleekify:
 
     def post(self, path: str):
         return self.route_decorator(path, "POST")
+
+    def put(self, path: str):
+        return self.route_decorator(path, "PUT")
+
+    def patch(self, path: str):
+        return self.route_decorator(path, "PATCH")
+
+    def delete(self, path: str):
+        return self.route_decorator(path, "DELETE")
 
     async def call_handlers(
         self,

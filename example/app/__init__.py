@@ -1,4 +1,4 @@
-from sleekify import Sleekify, Guard
+from sleekify import Sleekify, Guard, Request
 from pydantic import BaseModel
 from typing import Optional
 
@@ -24,6 +24,36 @@ async def secure(auth=Guard(Authenticate, with_token=False)):
 @app.get("/get-item")
 async def get():
     return {"data": "item-1"}
+
+
+@app.get("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
+
+
+@app.post("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
+
+
+@app.put("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
+
+
+@app.patch("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
+
+
+@app.delete("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
 
 
 @app.post("/create-item")
