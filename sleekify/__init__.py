@@ -1,28 +1,51 @@
+from typing import Any, Dict
+import re
 from json.decoder import JSONDecodeError
 from inspect import signature, _empty, isclass
-from typing import Any, Dict
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import Scope, Receive, Send
+from sleekify.guard import Guard
+from sleekify.types import Router, Routes, RouteHandler
 from pydantic import BaseModel, ValidationError
 
-from sleekify.guard import Guard
-from sleekify.types import RouteHandler, Router, Routes
 
-
-class Sleekify:
+class App:
     def __init__(self):
         self.routes: Routes = {}
+
+    def get(self, path: str):
+        return self.route(path, "GET")
+
+    def post(self, path: str):
+        return self.route(path, "POST")
+
+    def put(self, path: str):
+        return self.route(path, "PUT")
+
+    def patch(self, path: str):
+        return self.route(path, "PATCH")
+
+    def delete(self, path: str):
+        return self.route(path, "DELETE")
 
     def router(self, path: str, method: str, handler: RouteHandler):
         if path not in self.routes:
             self.routes[path] = {}
         self.routes[path][method.upper()] = handler
 
-    async def resolve_parameters(
-        self, request: Request, router: Router
-    ) -> Dict[str, Any]:
+    def route(self, path: str, method: str):
+        def decorator(router: Router):
+            async def handler(request: Request, **path_params):
+                return await self.common(request, router, path_params)
+
+            self.router(path, method, handler)
+            return router
+
+        return decorator
+
+    async def resolver(self, request: Request, router: Router) -> Dict[str, Any]:
         sig = signature(router)
         kwargs = {}
 
@@ -60,8 +83,12 @@ class Sleekify:
 
         return kwargs
 
-    async def common_handler(self, request: Request, router: Router):
-        kwargs = await self.resolve_parameters(request, router)
+    async def common(self, request: Request, router: Router, path_params: dict = None):
+        if path_params is None:
+            path_params = {}
+
+        kwargs = await self.resolver(request, router)
+        kwargs.update(path_params)
         response = await router(**kwargs)
 
         if isinstance(response, Dict):
@@ -73,36 +100,12 @@ class Sleekify:
         else:
             return JSONResponse({"error": "Invalid response type"}, status_code=500)
 
-    def route_decorator(self, path: str, method: str):
-        def decorator(router: Router):
-            async def handler(request: Request):
-                return await self.common_handler(request, router)
-
-            self.router(path, method, handler)
-            return router
-
-        return decorator
-
-    def get(self, path: str):
-        return self.route_decorator(path, "GET")
-
-    def post(self, path: str):
-        return self.route_decorator(path, "POST")
-
-    def put(self, path: str):
-        return self.route_decorator(path, "PUT")
-
-    def patch(self, path: str):
-        return self.route_decorator(path, "PATCH")
-
-    def delete(self, path: str):
-        return self.route_decorator(path, "DELETE")
-
-    async def call_handlers(
+    async def execute(
         self,
         handlers,
         method: str,
         request: Request,
+        path_params: dict,
         scope: Scope,
         receive: Receive,
         send: Send,
@@ -110,7 +113,10 @@ class Sleekify:
         if handlers:
             handler = handlers.get(method)
             if handler:
-                response = await handler(request)
+                if path_params:
+                    response = await handler(request, **path_params)
+                else:
+                    response = await handler(request)
                 if isinstance(response, Dict):
                     response = JSONResponse(response)
                 await response(scope, receive, send)
@@ -123,11 +129,33 @@ class Sleekify:
             response = JSONResponse({"message": "Not Found"}, status_code=404)
             await response(scope, receive, send)
 
+    def convert_path_to_regex(self, path: str) -> str:
+        pattern = re.sub(r"{(\w+)}", r"(?P<\1>[^/]+)", path)
+        return f"^{pattern}$"
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
             request = Request(scope, receive)
             path = scope["path"]
             method = scope["method"].upper()
-            handlers = self.routes.get(path)
 
-            await self.call_handlers(handlers, method, request, scope, receive, send)
+            path_params = {}
+
+            matched = False
+            for route_path, methods in self.routes.items():
+                regex_path = self.convert_path_to_regex(route_path)
+                match = re.match(regex_path, path)
+                if match:
+                    path_params = match.groupdict()
+                    handler = methods.get(method)
+                    if handler:
+                        await self.execute(
+                            methods, method, request, path_params, scope, receive, send
+                        )
+                        matched = True
+                        break
+
+            if not matched:
+                await self.execute(
+                    {}, method, request, path_params, scope, receive, send
+                )

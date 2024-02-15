@@ -1,8 +1,8 @@
-from sleekify import Sleekify, Guard, Request
+from sleekify import App, Guard, Request
 from pydantic import BaseModel
 from typing import Optional
 
-app = Sleekify()
+app = App()
 
 
 class ItemModel(BaseModel):
@@ -24,13 +24,20 @@ async def matt(request: Request):
 
 
 @app.post("/secure")
-async def secure(auth=Guard(Authenticate, with_token=False)):
+async def secure(auth=Guard(Authenticate, with_token=True)):
     return {"role": "authenticated", "session": auth}
 
 
-# @app.get("/get-item")
-# async def get():
-#     return {"data": "item-1"}
+@app.get("/get-items")
+async def get():
+    return {"data": ["item-1", "item-2", "item-3"]}
+
+
+@app.get("/get-item/{id}")
+async def endpoint(id: str):
+    if id == "1":
+        return {"data": "item-1"}
+    return {"error": "Item not found"}
 
 
 @app.get("/matt")
@@ -39,30 +46,30 @@ async def matt(request: Request):
     return {"body": body}
 
 
-# @app.post("/matt")
-# async def matt(request: Request):
-#     body = await request.json()
-#     return {"body": body}
+@app.post("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
 
 
-# @app.put("/matt")
-# async def matt(request: Request):
-#     body = await request.json()
-#     return {"body": body}
+@app.put("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
 
 
-# @app.patch("/matt")
-# async def matt(request: Request):
-#     body = await request.json()
-#     return {"body": body}
+@app.patch("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
 
 
-# @app.delete("/matt")
-# async def matt(request: Request):
-#     body = await request.json()
-#     return {"body": body}
+@app.delete("/matt")
+async def matt(request: Request):
+    body = await request.json()
+    return {"body": body}
 
 
-# @app.post("/create-item")
-# async def create(item: ItemModel):
-#     return {"data": f"item-{item.name}"}
+@app.post("/create-item")
+async def create(item: ItemModel):
+    return {"data": f"item-{item.name}"}

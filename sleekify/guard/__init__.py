@@ -1,9 +1,11 @@
 from typing import Callable, Awaitable, Any
 from asyncio import iscoroutinefunction as is_async
 
+Router = Callable[..., Awaitable[Any]]
+
 
 class Guard:
-    def __init__(self, router: Callable[..., Awaitable[Any]], *args, **kwargs):
+    def __init__(self, router: Router, *args, **kwargs):
         self.router = router
         self.args = args
         self.kwargs = kwargs
