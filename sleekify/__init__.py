@@ -26,18 +26,16 @@ class Sleekify:
         sig = signature(router)
         kwargs = {}
 
-        if "_request" in sig.parameters:
-            kwargs["_request"] = request
+        for name, param in sig.parameters.items():
+            if param.annotation is Request:
+                kwargs[name] = request
+                continue
 
-        if request.method in ["POST", "PUT", "PATCH"]:
-            try:
-                json_body = await request.json()
-            except JSONDecodeError:
-                json_body = {}
-
-            for name, param in sig.parameters.items():
-                if name == "_request":
-                    continue
+            if request.method in ["POST", "PUT", "PATCH"]:
+                try:
+                    json_body = await request.json()
+                except JSONDecodeError:
+                    json_body = {}
 
                 if isinstance(param.default, Guard):
                     resolved_value = await param.default.resolve()
@@ -55,10 +53,10 @@ class Sleekify:
                         name, param.default if param.default is not _empty else None
                     )
                     kwargs[name] = value
-        else:
-            for name, param in sig.parameters.items():
-                if name == "_request":
-                    continue
+            else:
+                for name, param in sig.parameters.items():
+                    if name == "_request":
+                        continue
 
         return kwargs
 
