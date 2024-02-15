@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sleekify",
-    version="0.0.9",
+    version="0.0.11",
     author="Matt J. Stevenson",
     author_email="dev@mattjs.me",
     description="A minimalistic, ASGI, Python framework for building REST API's.",
