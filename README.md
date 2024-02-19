@@ -22,4 +22,11 @@ async def endpoint(name: str):
   return { "name": name }
 
 ```
-  
+
+Get started:
+
+Anaconda:
+
+```
+conda create --name sleekify -y && conda activate sleekify && pip install -r requirements.txt
+```
