@@ -1,7 +1,6 @@
-from typing import Callable, Awaitable, Any
 from asyncio import iscoroutinefunction as is_async
 
-Router = Callable[..., Awaitable[Any]]
+from ..types import Router
 
 
 class Guard:

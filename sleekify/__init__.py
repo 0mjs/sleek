@@ -129,7 +129,7 @@ class App:
             response = JSONResponse({"message": "Not Found"}, status_code=404)
             await response(scope, receive, send)
 
-    def convert_path_to_regex(self, path: str) -> str:
+    def path_to_regex(self, path: str) -> str:
         pattern = re.sub(r"{(\w+)}", r"(?P<\1>[^/]+)", path)
         return f"^{pattern}$"
 
@@ -138,12 +138,11 @@ class App:
             request = Request(scope, receive)
             path = scope["path"]
             method = scope["method"].upper()
-
             path_params = {}
-
             matched = False
+
             for route_path, methods in self.routes.items():
-                regex_path = self.convert_path_to_regex(route_path)
+                regex_path = self.path_to_regex(route_path)
                 match = re.match(regex_path, path)
                 if match:
                     path_params = match.groupdict()
