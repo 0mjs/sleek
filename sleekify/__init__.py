@@ -8,7 +8,7 @@ from starlette.responses import JSONResponse
 from starlette.types import Scope, Receive, Send
 
 from sleekify.guard import Guard
-from sleekify.types import Router, Routes, RouteHandler
+from sleekify.types import Router, RouteHandler
 from pydantic import BaseModel, ValidationError
 
 
@@ -50,16 +50,16 @@ class App:
         sig = signature(router)
         kwargs = {}
 
-        for name, param in sig.parameters.items():
-            if param.annotation is Request:
-                kwargs[name] = request
-                continue
+        if request.method in ["POST", "PUT", "PATCH"]:
+            try:
+                json_body = await request.json()
+            except JSONDecodeError:
+                json_body = {}
 
-            if request.method in ["POST", "PUT", "PATCH"]:
-                try:
-                    json_body = await request.json()
-                except JSONDecodeError:
-                    json_body = {}
+            for name, param in sig.parameters.items():
+                if param.annotation is Request:
+                    kwargs[name] = request
+                    continue
 
                 if isinstance(param.default, Guard):
                     resolved_value = await param.default.resolve()
@@ -77,10 +77,18 @@ class App:
                         name, param.default if param.default is not _empty else None
                     )
                     kwargs[name] = value
-            else:
-                for name, param in sig.parameters.items():
-                    if name == "_request":
-                        continue
+
+        else:
+            query_params = request.query_params
+            for name, param in sig.parameters.items():
+                if param.annotation is Request:
+                    kwargs[name] = request
+                    continue
+
+                value = query_params.get(
+                    name, param.default if param.default is not _empty else None
+                )
+                kwargs[name] = value
 
         return kwargs
 
@@ -133,36 +141,26 @@ class App:
             response = JSONResponse({"message": "Not Found"}, status_code=404)
             await response(scope, receive, send)
 
-    def path_regex(self, path: str) -> str:
-        pattern = re.sub(r"{(\w+)}", r"(?P<\1>[^/]+)", path)
-        compiled_pattern = re.compile(f"^{pattern}$")
-        return compiled_pattern
-
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
             request = Request(scope, receive)
             path = scope["path"]
             method = scope["method"].upper()
-            matched = False
 
             for route_path, methods in self.routes.items():
-                match = self.path_regex(route_path).match(path)
+                match = path_regex(route_path).match(path)
                 if match:
                     path_params = match.groupdict()
-                    handler = methods.get(method)
-                    if handler:
-                        response = await handler(request, **path_params)
-                        await response(scope, receive, send)
-                        matched = True
-                        break
-                    else:
-                        response = JSONResponse(
-                            {"detail": "Method Not Allowed"}, status_code=405
-                        )
-                        await response(scope, receive, send)
-                        matched = True
-                        break
+                    await self.execute(
+                        methods, method, request, path_params, scope, receive, send
+                    )
+                    return
 
-            if not matched:
-                response = JSONResponse({"message": "Not Found"}, status_code=404)
-                await response(scope, receive, send)
+            response = JSONResponse({"message": "Not Found"}, status_code=404)
+            await response(scope, receive, send)
+
+
+def path_regex(path: str) -> str:
+    pattern = re.sub(r"{(\w+)}", r"(?P<\1>[^/]+)", path)
+    compiled_pattern = re.compile(f"^{pattern}$")
+    return compiled_pattern

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sleekify",
-    version="0.0.17",
+    version="0.0.18",
     author="Matt J. Stevenson",
     author_email="dev@mattjs.me",
     description="Sleekify: A minimalistic, ASGI Python framework for building REST API's.",
@@ -11,9 +11,13 @@ setup(
     url="https://github.com/0mjs/sleekify",
     packages=find_packages(),
     install_requires=[
-        "uvicorn",
-        "starlette",
+        "httpx",
         "pydantic",
+        "pytest",
+        "pytest-asyncio",
+        "python-multipart",
+        "starlette",
+        "uvicorn",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -2,5 +2,6 @@ httpx
 pydantic
 pytest
 pytest-asyncio
+python-multipart
 starlette
 uvicorn

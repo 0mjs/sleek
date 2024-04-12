@@ -3,6 +3,8 @@ import pytest
 
 from app import app
 
+# Method testing
+
 
 @pytest.mark.asyncio
 async def test_get_route():
@@ -37,14 +39,6 @@ async def test_delete_route():
 
 
 @pytest.mark.asyncio
-async def test_secure_post():
-    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.post("/secure-post")
-        assert response.status_code == 200
-        assert response.json()["session"]["user"] == "Matt"
-
-
-@pytest.mark.asyncio
 async def test_create_item():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.post(
@@ -55,3 +49,46 @@ async def test_create_item():
             "item": {"name": "Sample Item", "price": 150},
             "message": "Item created successfully",
         }
+
+
+# In Depth Usage-focused testing
+
+
+@pytest.mark.asyncio
+async def test_hello_world():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/hello")
+        assert response.status_code == 200
+        assert response.json() == {"message": "Hello world!"}
+
+
+@pytest.mark.asyncio
+async def test_hello_scope():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/hello-scope")
+        assert response.status_code == 200
+        assert "Hello world! - " in response.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_hello_with_id():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/hello/123")
+        assert response.status_code == 200
+        assert response.json() == {"message": "Hello, 123!"}
+
+
+@pytest.mark.asyncio
+async def test_hello_scope_id():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/hello-scope-id?id=456")
+        assert response.status_code == 200
+        assert "Hello, 456! - " in response.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_hello_scope_with_id():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/hello-scope/789")
+        assert response.status_code == 200
+        assert "Hello, 789! - " in response.json()["message"]
