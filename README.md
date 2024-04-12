@@ -24,11 +24,7 @@ pip install sleekify
 ```
 
 ## Quick Start
-To get started with Sleekify, you can set up a basic web application with several routes as shown below. 
-Each endpoint can explicitly include the request object to asynchronously access various request details. 
-Handling path parameters is straightforward: simply declare them in the route path using the `/{id}` syntax and include them in your method arguments to use them within your endpoint code. 
-In contrast, any arguments not recognised as path parameters are automatically interpreted as query parameters by default.
-You can also just as simply, use `pydantic` models in your requests and have them define the endpoint arguments.
+To get started with Sleekify, you can set up a basic web application with several routes as shown below:
 
 ```python
 from sleekify import App, Request
@@ -76,10 +72,10 @@ pip install uvicorn
 ```
 
 Then, replace `module_name` with the name of the Python file where your app is defined.
-For example: If your `app` is in the root directory of your project, use: `uvicorn app:app --reload`
+For example: If your `app` is in the root directory of your project, use: `uvicorn app:app --reload --port 8080`
 
 ```zsh
-uvicorn module_name:app --reload
+uvicorn module_name:app --reload --port 8080
 ```
 
 ## Running Tests
@@ -88,6 +84,12 @@ To run the Sleekify internal testing suite that uses `pytest-asyncio` and `httpx
 ```zsh
 pytest test/__init__.py
 ```
+
+## Developer Start
+- `pip install -r requirements.txt`
+- `uvicorn app:app --reload --port 8080`
+- `curl http://localhost:8080/hello`
+- `pytest test/__init__.py`
 
 ## Documentation and Support
 Documentation is currently being developed to better outline usage.
