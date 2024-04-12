@@ -19,9 +19,10 @@ Alternatively, if you use Anaconda, you can set up a new environment for Sleekif
 conda create --name sleekify python=3.8 -y
 conda activate sleekify
 pip install sleekify
-Requirements
-Sleekify requires Python 3.6+ and relies on Starlette for the underlying ASGI support. Ensure all dependencies are installed by checking the requirements.txt file typically found in Python projects:
 ```
+
+## Requirements
+Sleekify requires Python 3.6+ and relies on Starlette for the underlying ASGI support. Ensure all dependencies are installed by checking the requirements.txt file typically found in Python projects:
 
 ```zsh
 pip install -r requirements.txt
