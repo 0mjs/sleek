@@ -79,6 +79,13 @@ async def create_item(item: Item):
     return {"item": item.dict(), "message": "Item created successfully"}
 ```
 
+## Running Tests
+To run the Sleekify internal testing suite that uses `pytest-asyncio` and `httpx`, run the following command:
+
+```zsh
+pytest test/__init__.py
+```
+
 ## Documentation and Support
 Documentation is currently being developed to better outline usage.
 If you need support, please contact the developer directly: dev@mattjs.me

@@ -1,5 +1,6 @@
 httpx
 pydantic
 pytest
+pytest-asyncio
 starlette
 uvicorn
