@@ -1,0 +1,5 @@
+httpx
+pydantic
+pytest
+starlette
+uvicorn

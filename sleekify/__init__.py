@@ -6,6 +6,7 @@ from inspect import signature, _empty, isclass
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import Scope, Receive, Send
+
 from sleekify.guard import Guard
 from sleekify.types import Router, Routes, RouteHandler
 from pydantic import BaseModel, ValidationError
@@ -13,7 +14,7 @@ from pydantic import BaseModel, ValidationError
 
 class App:
     def __init__(self):
-        self.routes: Routes = {}
+        self.routes = {}
 
     def get(self, path: str):
         return self.route(path, "GET")
@@ -121,40 +122,47 @@ class App:
                     response = JSONResponse(response)
                 await response(scope, receive, send)
             else:
+                allowed = ", ".join(handlers.keys())
                 response = JSONResponse(
-                    {"detail": "Method Not Allowed"}, status_code=405
+                    {"detail": "Method Not Allowed"},
+                    status_code=405,
+                    headers={"Allow": allowed},
                 )
                 await response(scope, receive, send)
         else:
             response = JSONResponse({"message": "Not Found"}, status_code=404)
             await response(scope, receive, send)
 
-    def path_to_regex(self, path: str) -> str:
+    def path_regex(self, path: str) -> str:
         pattern = re.sub(r"{(\w+)}", r"(?P<\1>[^/]+)", path)
-        return f"^{pattern}$"
+        compiled_pattern = re.compile(f"^{pattern}$")
+        return compiled_pattern
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
             request = Request(scope, receive)
             path = scope["path"]
             method = scope["method"].upper()
-            path_params = {}
             matched = False
 
             for route_path, methods in self.routes.items():
-                regex_path = self.path_to_regex(route_path)
-                match = re.match(regex_path, path)
+                match = self.path_regex(route_path).match(path)
                 if match:
                     path_params = match.groupdict()
                     handler = methods.get(method)
                     if handler:
-                        await self.execute(
-                            methods, method, request, path_params, scope, receive, send
+                        response = await handler(request, **path_params)
+                        await response(scope, receive, send)
+                        matched = True
+                        break
+                    else:
+                        response = JSONResponse(
+                            {"detail": "Method Not Allowed"}, status_code=405
                         )
+                        await response(scope, receive, send)
                         matched = True
                         break
 
             if not matched:
-                await self.execute(
-                    {}, method, request, path_params, scope, receive, send
-                )
+                response = JSONResponse({"message": "Not Found"}, status_code=404)
+                await response(scope, receive, send)
