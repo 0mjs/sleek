@@ -1,5 +1,8 @@
 from httpx import AsyncClient
 import pytest
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from app import app
 
@@ -55,7 +58,7 @@ async def test_create_item():
 
 
 @pytest.mark.asyncio
-async def test_hello_world():
+async def test_basic_get():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.get("/hello")
         assert response.status_code == 200
@@ -63,32 +66,32 @@ async def test_hello_world():
 
 
 @pytest.mark.asyncio
-async def test_hello_scope():
+async def test_basic_get_query_params():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello-scope")
+        response = await ac.get("/hello-name?name=Matt")
         assert response.status_code == 200
-        assert "Hello world! - " in response.json()["message"]
+        assert "Hello, Matt!" in response.json()["message"]
 
 
 @pytest.mark.asyncio
-async def test_hello_with_id():
+async def test_basic_get_path_params():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello/123")
+        response = await ac.get("/hello/1500")
         assert response.status_code == 200
-        assert response.json() == {"message": "Hello, 123!"}
+        assert response.json() == {"message": "Hello, 1500!"}
 
 
 @pytest.mark.asyncio
-async def test_hello_scope_id():
+async def test_basic_get_request():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello-scope-id?id=456")
+        response = await ac.get("/hello-request")
         assert response.status_code == 200
-        assert "Hello, 456! - " in response.json()["message"]
+        assert "Hello world!" in response.json()["message"]
 
 
 @pytest.mark.asyncio
 async def test_hello_scope_with_id():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello-scope/789")
+        response = await ac.get("/hello-request/3000")
         assert response.status_code == 200
-        assert "Hello, 789! - " in response.json()["message"]
+        assert "Hello, 3000!" in response.json()["message"]

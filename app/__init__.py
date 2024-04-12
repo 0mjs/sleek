@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+
 from sleekify import App, Guard, Request
 
 app = App()
@@ -14,33 +15,38 @@ class ItemModel(BaseModel):
 
 
 ## no arguments, showing how we return JSONResponse() implicitly
+## /hello
 @app.get("/hello")
 async def endpoint():
     return {"message": f"Hello world!"}
 
 
-## request argument, showing that it's there by default on all endpoints
-@app.get("/hello-scope")
-async def endpoint(request: Request):
-    return {"message": f"Hello world! - {request.scope}"}
+## request argument only, showing how this defaults to query parameters
+## /hello-name?name=Matt
+@app.get("/hello-name")
+async def endpoint(name: str):
+    return {"message": f"Hello, {name}!"}
 
 
 # path parameter, showing how we can use it in the endpoint
+## /hello/1500
 @app.get("/hello/{id}")
 async def endpoint(id: str):
     return {"message": f"Hello, {id}!"}
 
 
-## request argument only, showing how this defaults to query parameters
-@app.get("/hello-scope-id")
-async def endpoint(request: Request, id: str):
-    return {"message": f"Hello, {id}! - {request.scope}"}
+## request argument, showing that it's there by default on all endpoints
+## /hello-scope
+@app.get("/hello-request")
+async def endpoint(request: Request):
+    return {"message": f"Hello world!"}
 
 
 ## path parameter and request argument, showing both in use together
-@app.get("/hello-scope/{id}")
-async def endpoint(request: Request, id: str):
-    return {"message": f"Hello, {id}! - {request.scope}"}
+## /hello-request/3000
+@app.get("/hello-request/{id}")
+async def endpoint(id: str):
+    return {"message": f"Hello, {id}!"}
 
 
 # Method specific routes
