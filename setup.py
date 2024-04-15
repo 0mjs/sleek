@@ -11,11 +11,7 @@ setup(
     url="https://github.com/0mjs/sleekify",
     packages=find_packages(),
     install_requires=[
-        "httpx",
         "pydantic",
-        "pytest",
-        "pytest-asyncio",
-        "python-multipart",
         "starlette",
         "uvicorn",
     ],
