@@ -5,7 +5,7 @@ Sleekify is a minimalistic, highly-performant, asychronous Python REST API frame
 - Simple & Expressive: Sleekify is easy to write, with simple expressive syntax.
 - Async-first: Built on the asynchronous server methodology, enabling high performance and speed in concurrency.
 - Flexible: Supports a wide range of request handling features from simple routes to complex parameter parsing.
-- Validated: Uses `typing` to ensure your requests are properly validated and sanitised.
+- Validated: Uses Python Type hints, `typing` to ensure your requests are properly validated and sanitised.
 - Easy Setup: You can get up and running in just a few lines of code!
 
 ## Installation
@@ -28,40 +28,12 @@ To get started with Sleekify, you can set up a basic web application with severa
 
 ```python
 from sleekify import App, Request
-from pydantic import BaseModel
 
 app = App()
 
-class Item(BaseModel):
-    name: str
-    description: str
-    price: float
-
 @app.get("/")
-async def home():
+async def endpoint():
     return {"message": "Welcome to Sleekify!"}
-
-@app.post("/")
-async def create_item(request: Request):
-    data = await request.json()
-    return {"data": data}
-
-@app.get("/item")
-async def get_item(id: int):
-    return {"message": f"Item: {id}"}
-
-@app.put("/item/{id}")
-async def update_item(request: Request, id: int):
-    data = await request.json()
-    return {"id": id, "updated_data": data}
-
-@app.delete("/item/{id}")
-async def delete_item(id: int):
-    return {"message": f"Item {id} deleted successfully"}
-
-@app.post("/items")
-async def create_item(item: Item):
-    return {"item": item.model_dump(), "message": "Item created successfully"}
 ```
 
 ## Running Your App
@@ -75,21 +47,21 @@ Then, replace `module_name` with the name of the Python file where your app is d
 For example: If your `app` is in the root directory of your project, use: `uvicorn app:app --reload --port 8080`
 
 ```zsh
-uvicorn module_name:app --reload --port 8080
+uvicorn module_name:app --reload
 ```
 
 ## Running Tests
 To run the Sleekify internal testing suite that uses `pytest-asyncio` and `httpx`, run the following command:
 
 ```zsh
-pytest test/__init__.py
+pytest test.py
 ```
 
 ## Developer Start
 - `pip install -r requirements.txt`
-- `uvicorn app:app --reload --port 8080`
-- `curl http://localhost:8080/hello`
-- `pytest test/__init__.py`
+- `uvicorn app:app --reload`
+- `curl http://localhost:8000/hello`
+- `pytest test.py`
 
 ## Documentation and Support
 Documentation is currently being developed to better outline usage.
