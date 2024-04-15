@@ -3,20 +3,8 @@ from functools import wraps
 from sleekify.router import Router
 from sleekify.requests import Request, Requests
 from sleekify.responses import JSONResponse
-from sleekify.guards import Guard
-from sleekify.util import path_matcher
+from sleekify.util import match_path
 from sleekify.const import METHODS
-
-
-def route(method: str):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, path: str):
-            return self.router.route(self.routes, path, METHODS[method])
-
-        return wrapper
-
-    return decorator
 
 
 class App:
@@ -24,6 +12,16 @@ class App:
         self.requests = Requests()
         self.router = Router()
         self.routes = {}
+
+    def route(method: str):
+        def decorator(func):
+            @wraps(func)
+            def wrapper(self, path: str):
+                return self.router.route(self.routes, path, METHODS[method])
+
+            return wrapper
+
+        return decorator
 
     @route("get")
     def get(self):
@@ -61,7 +59,7 @@ class App:
             response = JSONResponse({"message": "Not Found"}, status_code=404)
 
             for route_path, methods in self.routes.items():
-                match = path_matcher(route_path).match(path)
+                match = match_path(route_path).match(path)
                 if match:
                     path_params = match.groupdict()
                     return await self.requests.handler(

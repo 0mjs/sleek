@@ -7,7 +7,7 @@ from app import app
 
 
 @pytest.mark.asyncio
-async def test_get_route():
+async def test__methods_GET():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.get("/get-route")
         assert response.status_code == 200
@@ -15,7 +15,7 @@ async def test_get_route():
 
 
 @pytest.mark.asyncio
-async def test_post_route():
+async def test__methods_POST():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.post("/post-route", json={"key": "value"})
         assert response.status_code == 200
@@ -23,7 +23,7 @@ async def test_post_route():
 
 
 @pytest.mark.asyncio
-async def test_put_route():
+async def test__methods_PUT():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.put("/put-route", json={"key": "value"})
         assert response.status_code == 200
@@ -31,64 +31,59 @@ async def test_put_route():
 
 
 @pytest.mark.asyncio
-async def test_delete_route():
+async def test__methods_DELETE():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.delete("/delete-route")
         assert response.status_code == 200
         assert response.json() == {"method": "DELETE"}
 
 
+# Pydantic model testing
+
+
 @pytest.mark.asyncio
-async def test_create_item():
+async def test__pydantic_model_POST():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.post(
             "/create-item", json={"name": "Sample Item", "price": 150}
         )
         assert response.status_code == 200
         assert response.json() == {
+            "message": "Item created.",
             "item": {"name": "Sample Item", "price": 150},
-            "message": "Item created successfully",
         }
 
 
-# In Depth Usage-focused testing
+# Smoke testing
 
 
 @pytest.mark.asyncio
-async def test_basic_get():
+async def test__example_GET():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello")
+        response = await ac.get("/")
         assert response.status_code == 200
-        assert response.json() == {"message": "Hello world!"}
+        assert response.json() == {"message": "Hello world"}
 
 
 @pytest.mark.asyncio
-async def test_basic_get_query_params():
+async def test__example_GET_path_params():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/items/1")
+        assert response.status_code == 200
+        assert response.json() == {"item_id": "1"}
+
+
+@pytest.mark.asyncio
+async def test__example_GET_nested_path_params():
+    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
+        response = await ac.get("/items/1/batch/10")
+        assert response.status_code == 200
+        assert response.json() == {"item_id": "1", "batch_id": "10"}
+
+
+@pytest.mark.asyncio
+async def test__hello_GET_query_params():
     async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
         response = await ac.get("/hello-name?name=Matt")
         assert response.status_code == 200
         assert "Hello, Matt!" in response.json()["message"]
-
-
-@pytest.mark.asyncio
-async def test_basic_get_path_params():
-    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello/1500")
-        assert response.status_code == 200
-        assert response.json() == {"message": "Hello, 1500!"}
-
-
-@pytest.mark.asyncio
-async def test_basic_get_request():
-    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello-request")
-        assert response.status_code == 200
-        assert "Hello world!" in response.json()["message"]
-
-
-@pytest.mark.asyncio
-async def test_hello_scope_with_id():
-    async with AsyncClient(app=app, base_url="http://sleekify-test") as ac:
-        response = await ac.get("/hello-request/3000")
-        assert response.status_code == 200
-        assert "Hello, 3000!" in response.json()["message"]

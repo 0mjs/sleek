@@ -20,6 +20,7 @@ class Router:
         if path not in routes:
             routes[path] = {}
         routes[path][method.upper()] = handler
+        print(f"{path} ({method.upper()})")
 
     def route_decorator(self, routes: TRoutes, path: str, method: str):
         def decorator(router: TRouter):
@@ -53,7 +54,7 @@ class Router:
                     param.annotation, BaseModel
                 ):
                     try:
-                        model = param.annotation.parse_obj(json_body)
+                        model = param.annotation.model_validate(json_body)
                         kwargs[name] = model
                     except ValidationError as e:
                         return JSONResponse({"detail": e.errors()}, status_code=422)

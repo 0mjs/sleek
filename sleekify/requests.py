@@ -20,6 +20,7 @@ class Requests:
             handler = handlers.get(method)
             if handler:
                 if path_params:
+                    print(path_params)
                     response = await handler(request, **path_params)
                 else:
                     response = await handler(request)

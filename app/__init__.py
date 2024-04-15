@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel
 
-from sleekify import App, Guard, Request
+from sleekify import App, Request
 
 app = App()
 
@@ -11,14 +11,19 @@ class ItemModel(BaseModel):
     price: Optional[int] = None
 
 
-# GET
+@app.get("/")
+async def root():
+    return {"message": "Hello world"}
 
 
-## no arguments, showing how we return JSONResponse() implicitly
-## /hello
-@app.get("/hello")
-async def endpoint():
-    return {"message": f"Hello world!"}
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):
+    return {"item_id": item_id}
+
+
+@app.get("/items/{item_id}/batch/{batch}")
+async def endpoint(item_id: str, batch: str):
+    return {"item_id": item_id, "batch_id": batch}
 
 
 ## request argument only, showing how this defaults to query parameters
@@ -26,27 +31,6 @@ async def endpoint():
 @app.get("/hello-name")
 async def endpoint(name: str):
     return {"message": f"Hello, {name}!"}
-
-
-# path parameter, showing how we can use it in the endpoint
-## /hello/1500
-@app.get("/hello/{id}")
-async def endpoint(id: str):
-    return {"message": f"Hello, {id}!"}
-
-
-## request argument, showing that it's there by default on all endpoints
-## /hello-scope
-@app.get("/hello-request")
-async def endpoint(request: Request):
-    return {"message": f"Hello world!"}
-
-
-## path parameter and request argument, showing both in use together
-## /hello-request/3000
-@app.get("/hello-request/{id}")
-async def endpoint(id: str):
-    return {"message": f"Hello, {id}!"}
 
 
 # Method specific routes
@@ -89,7 +73,7 @@ async def delete_route():
 async def create_item(request: Request):
     item = await request.json()
     item_model = ItemModel(**item)
-    return {"item": item_model.model_dump(), "message": "Item created successfully"}
+    return {"message": "Item created.", "item": item_model.model_dump()}
 
 
 @app.get("/query-route")
@@ -111,16 +95,16 @@ async def upload_file(request: Request):
     return {"method": "POST", "file_size": len(file_contents)}
 
 
-@app.get("/protected-route")
-async def protected_route(request: Request):
-    auth = await Guard(Authenticate, with_token=True)(request)
-    return {"message": "You are authenticated", "user": auth["user"]}
+# @app.get("/protected-route")
+# async def protected_route(request: Request):
+#     auth = await Guard(Authenticate, with_token=True)(request)
+#     return {"message": "You are authenticated", "user": auth["user"]}
 
 
 # Guard/Authentication methods
 
 
-async def Authenticate(with_token: bool = False):
-    if with_token:
-        return {"user": "Matt", "token": "123456"}
-    return {"user": "Matt"}
+# async def Authenticate(with_token: bool = False):
+#     if with_token:
+#         return {"user": "Matt", "token": "123456"}
+#     return {"user": "Matt"}
