@@ -1,5 +1,7 @@
 # Sleekify
-Sleekify is a minimalistic, highly-performant, asychronous Python REST API framework. It's been designed with simplicity as the main focus, aiming to provide a straightforward and efficient way to create robust Web API's, drawing inspiration from both Express.js and FastAPI.
+Sleekify is a minimalistic and async-first Starlette-based REST API framework for Python. 
+
+The framework focuses heavily on simplicity and developer experience (DX), aiming to provide a straightforward and efficient way to create robust Web API's, it draws inspiration from both Express.js and FastAPI.
 
 ## Installation
 Install using:
