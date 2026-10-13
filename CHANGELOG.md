@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- The project's GitHub repo is now github.com/0mjs/sleek. Old links and updates still work.
+- Setup now suggests ~/sleek-practice for new workspaces. Existing workspaces aren't affected.
+
 ## 1.0.0
 
 SleekCode's first stable release. 🎉

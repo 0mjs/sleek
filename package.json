@@ -1,6 +1,6 @@
 {
   "name": "sleekcode",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "LeetCode practice in your terminal, where you can print your way to a solution. NeetCode 150 in TypeScript or Python.",
   "private": true,
   "type": "module",
