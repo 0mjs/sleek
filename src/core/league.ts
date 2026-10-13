@@ -130,7 +130,7 @@ function leagueReadme(repo: string, players: Player[], graduateAfter: number): s
     `| ${a.login} | ${a.id}. ${a.title} | ${a.pass === a.total && a.total ? "✅" : "❌"} ${howLabel(a)} | ${a.seconds == null ? "–" : formatDuration(a.seconds)} | ${a.complexity || "–"}${a.aboveTarget ? " ⚠️" : ""} | ${LANGUAGES[a.language as keyof typeof LANGUAGES]?.tag ?? a.language} | ${a.at.slice(0, 10)} |`);
   return `# 🏆 ${repo.split("/").pop()}
 
-A private [SleekCode](https://github.com/0mjs/sleekcode) league. Updated automatically whenever someone logs a solve with \`sk log\`.
+A private [SleekCode](https://github.com/0mjs/sleek) league. Updated automatically whenever someone logs a solve with \`sk log\`.
 
 ## Leaderboard
 

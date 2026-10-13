@@ -67,7 +67,7 @@ async function askEditor(initial?: Editor): Promise<Editor> {
 }
 
 async function askDir(): Promise<string> {
-  const suggestion = "~/sleekcode-practice";
+  const suggestion = "~/sleek-practice";
   const v = check(await p.text({
     message: "Where should your workspace folder go?",
     placeholder: suggestion,

@@ -24,7 +24,7 @@ a log that quietly judges you. macOS only.
 ## Install
 
 ```sh
-git clone https://github.com/0mjs/sleekcode.git ~/sleekcode && bash ~/sleekcode/install.sh
+git clone https://github.com/0mjs/sleek.git ~/sleekcode && bash ~/sleekcode/install.sh
 ```
 
 It installs what it needs: [Bun](https://bun.sh), and if you pick Python, [uv](https://docs.astral.sh/uv/) and Python too.
